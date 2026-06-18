@@ -109,6 +109,9 @@ class CrawlConfig(BaseModel):
     # CFG-009
     checkpoint_path: Path = Path("output/checkpoint.json")
 
+    # How many pages to process between checkpoint saves (CE-036).
+    checkpoint_interval: int = 50
+
     # Logging
     log_path: Path = Path("output/crawl.jsonl")
 

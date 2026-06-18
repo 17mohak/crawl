@@ -7,7 +7,8 @@ import sys
 from pathlib import Path
 
 from crawl_engine.config.loader import load_config
-from crawl_engine.logging.logger import log_event, setup_logger
+from crawl_engine.logging.logger import setup_logger
+from crawl_engine.reliability.crawler import Crawler
 
 
 def main() -> int:
@@ -38,25 +39,26 @@ def main() -> int:
 
     logger = setup_logger(config.log_path)
 
-    log_event(
-        logger,
-        "crawl_started",
-        seed_urls=config.seed_urls,
-        max_depth=config.max_depth,
-        max_pages=config.max_pages,
-        output_dir=str(config.output_dir),
-        resume=args.resume,
-    )
-
     print(f"Config loaded from: {args.config}")
     print(f"  Seeds        : {len(config.seed_urls)}")
     print(f"  Max depth    : {config.max_depth}")
     print(f"  Max pages    : {config.max_pages or 'unlimited'}")
     print(f"  Output dir   : {config.output_dir}")
     print(f"  Log file     : {config.log_path}")
+    print(f"  Resume       : {args.resume}")
     print()
-    print("CE-001 to CE-003 complete.")
-    print("Next: implement URL Discovery (CE-004 to CE-011).")
+    print("Starting crawl...")
+
+    stats = Crawler(config, logger).run(resume=args.resume)
+
+    print()
+    print("Crawl finished.")
+    print(f"  Pages crawled      : {stats.pages_crawled}")
+    print(f"  Pages failed       : {stats.pages_failed}")
+    print(f"  Pages skipped      : {stats.pages_skipped}")
+    print(f"  Artifacts written  : {stats.artifacts_written}")
+    print(f"  Artifacts unchanged: {stats.artifacts_unchanged}")
+    print(f"  Links discovered   : {stats.links_discovered}")
 
     return 0
 
