@@ -35,18 +35,27 @@ src/crawl_engine/
 └── reliability/   # CE-035 to CE-038: Checkpoint, failure isolation
 ```
 
+See [docs/RUNBOOK.md](docs/RUNBOOK.md) for the full developer runbook
+(configuration reference, output format, guarantees, logging, architecture).
+
 ## Backlog status
 
 | Feature | Tasks | Status |
 |---|---|---|
 | Project Setup | CE-001 to CE-003 | ✅ Done |
-| URL Discovery | CE-004 to CE-011 | Not started |
-| Canonicalization | CE-012 to CE-018 | Not started |
-| HTML Extraction | CE-019 to CE-026 | Not started |
-| Markdown Storage | CE-027 to CE-034 | Not started |
-| Reliability | CE-035 to CE-038 | Not started |
-| Testing | CE-039 to CE-044 | Not started |
-| Documentation | CE-045 | Not started |
+| URL Discovery | CE-004 to CE-011 | ✅ Done |
+| Canonicalization | CE-012 to CE-018 | ✅ Done |
+| HTML Extraction | CE-019 to CE-026 | ✅ Done |
+| Markdown Storage | CE-027 to CE-034 | ✅ Done |
+| Reliability | CE-035 to CE-038 | ✅ Done |
+| Testing | CE-039 to CE-044 | ✅ Done |
+| Documentation | CE-045 | ✅ Done |
+
+All 45 backlog tasks complete. 149 tests passing (140 unit + 9 integration), 96% coverage.
+
+**Open items pending confirmation:** the exact frontmatter schema (CE-028, awaiting
+the requirements doc), live-DOM tuning of content selectors (CE-024), and whether
+ORC Ch. 3309 ingestion is in scope. See the runbook's "Known limitations" section.
 
 ## Development note
 
