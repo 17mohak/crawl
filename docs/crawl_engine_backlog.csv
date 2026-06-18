@@ -1,0 +1,46 @@
+Task ID,Feature,Task,Requirement ID,Requirement Description,Acceptance Criteria ID,Definition of Done,Est Days,Status
+CE-001,Project Setup,Setup Python project structure,NFR-001,Deterministic architecture foundation,AC-017,Project builds successfully and runs locally,1,Not Started
+CE-002,Project Setup,Configure JSONL logging framework,FR-022,Structured JSON logging,AC-015,Log file generated with required schema fields,1,Not Started
+CE-003,Project Setup,Create configuration loader,CFG-001 to CFG-009,Config-driven execution,AC-017,Config loads and validates successfully,1,Not Started
+CE-004,URL Discovery,Load seed URLs from configuration,FR-001,Process seed URLs,AC-001,Seed URLs loaded from config and queued,1,Not Started
+CE-005,URL Discovery,Implement BFS Queue Manager,FR-001,BFS traversal,AC-001,URLs processed in BFS order,1,Not Started
+CE-006,URL Discovery,Queue persistence support,FR-019,Checkpoint queue state,AC-013,Queue state saved and reloadable,1,Not Started
+CE-007,URL Discovery,Max depth enforcement,CFG-004,Depth limits,AC-001,Crawl stops beyond configured depth,1,Not Started
+CE-008,URL Discovery,Max page enforcement,CFG-005,Page limits,AC-001,Crawl stops after configured page count,1,Not Started
+CE-009,URL Discovery,Internal link extraction,FR-004,Extract internal links,AC-002,Internal links discovered correctly,2,Not Started
+CE-010,URL Discovery,External link detection,FR-005,Ignore external links,AC-002,External links skipped and logged,1,Not Started
+CE-011,URL Discovery,Allowed path filtering,FR-004,Allowed path policy,AC-002,Disallowed paths skipped,1,Not Started
+CE-012,Canonicalization,Lowercase scheme and host,FR-002,URL normalization,AC-003,Canonical URLs consistent,1,Not Started
+CE-013,Canonicalization,Remove URL fragments,FR-002,URL normalization,AC-003,Fragment URLs deduplicated,1,Not Started
+CE-014,Canonicalization,Remove tracking query params,FR-002,URL normalization,AC-003,Tracking parameters removed,1,Not Started
+CE-015,Canonicalization,Normalize trailing slashes,FR-002,URL normalization,AC-003,URL variants resolve to same key,1,Not Started
+CE-016,Canonicalization,Resolve relative URLs,FR-002,URL normalization,AC-003,Relative URLs become absolute URLs,1,Not Started
+CE-017,Canonicalization,Implement Seen URL registry,FR-003,Process URL once,AC-001,Duplicate URLs never recrawled,1,Not Started
+CE-018,Canonicalization,Unit tests for canonicalization,"FR-002, FR-003",Validation,AC-003,Test suite passes,1,Not Started
+CE-019,HTML Extraction,Build HTTP Fetch Service,FR-006,Download HTML pages,AC-004,HTML content downloaded successfully,2,Not Started
+CE-020,HTML Extraction,Request timeout handling,CFG-006,Timeout support,AC-012,Requests timeout correctly,1,Not Started
+CE-021,HTML Extraction,Retry with exponential backoff,FR-018,Retry transient failures,AC-012,Retries follow configured policy,2,Not Started
+CE-022,HTML Extraction,HTML parser implementation,FR-006,Parse page content,AC-004,HTML parsed without errors,1,Not Started
+CE-023,HTML Extraction,Page title extraction,FR-007,Metadata extraction,AC-004,Title stored in metadata,1,Not Started
+CE-024,HTML Extraction,Main content extraction,FR-006,Extract content,AC-004,Main content extracted accurately,2,Not Started
+CE-025,HTML Extraction,Navigation/noise removal,FR-006,Content cleanup,AC-004,Noise removed from extracted content,1,Not Started
+CE-026,HTML Extraction,Metadata extraction,FR-007,Frontmatter metadata,AC-004,Required metadata captured,1,Not Started
+CE-027,Markdown Storage,HTML to Markdown conversion,FR-006,Markdown artifact creation,AC-004,Content converted successfully,2,Not Started
+CE-028,Markdown Storage,YAML frontmatter generation,FR-007,Metadata contract,AC-004,All required frontmatter fields present,1,Not Started
+CE-029,Markdown Storage,URL-to-path mapping,FR-006,Deterministic storage,AC-004,Path structure generated correctly,2,Not Started
+CE-030,Markdown Storage,Raw folder creation,FR-006,Storage structure,AC-004,Folders auto-created,1,Not Started
+CE-031,Markdown Storage,Atomic file write support,FR-008,Safe writes,AC-005,No corrupt partial files,1,Not Started
+CE-032,Markdown Storage,Content hash generation,FR-009,Change detection,AC-006,Hash generated consistently,1,Not Started
+CE-033,Markdown Storage,Skip unchanged content,FR-009,Idempotency,AC-006,No rewrite when content unchanged,1,Not Started
+CE-034,Markdown Storage,Save markdown artifacts,"FR-006, FR-007",Artifact persistence,AC-004,Markdown file saved successfully,1,Not Started
+CE-035,Reliability,Crawl workflow integration,FR-001 to FR-009,End-to-end crawl,AC-001 to AC-006,Crawl completes successfully,2,Not Started
+CE-036,Reliability,Checkpoint save and reload,"FR-019, FR-020",Resume support,AC-013,Resume continues correctly after restart,2,Not Started
+CE-037,Reliability,Structured event logging,"FR-022, FR-023",Audit logging,AC-015,All events logged with required fields,1,Not Started
+CE-038,Reliability,Failure isolation,FR-021,Continue after failure,AC-014,Single page failure doesn't stop crawl,1,Not Started
+CE-039,Testing,Unit Test Suite,Test Strategy,Unit validation,AC-001 to AC-006,All unit tests pass,3,Not Started
+CE-040,Testing,Integration Test Suite,Test Strategy,End-to-end validation,AC-001 to AC-016,All integration tests pass,2,Not Started
+CE-041,Testing,Determinism Validation,NFR-001,Deterministic output,AC-017,Two identical runs produce same results,1,Not Started
+CE-042,Testing,Idempotency Validation,NFR-002,No duplicate artifacts,AC-018,Reruns do not create duplicates,1,Not Started
+CE-043,Testing,Provenance Validation,NFR-005,Source traceability,AC-019,All artifacts contain provenance fields,1,Not Started
+CE-044,Testing,Reliability Validation,NFR-007,Continue despite failures,AC-020,Pipeline survives bounded failures,1,Not Started
+CE-045,Documentation,Developer Runbook,Definition of Done,Operational guide,DoD,Runbook created and reviewed,2,Not Started

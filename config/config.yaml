@@ -1,0 +1,53 @@
+# Crawl Engine Configuration
+# School Employees Retirement System of Ohio (SERS / OHSERS)
+# CFG-001 through CFG-009
+
+# CFG-001: Starting URLs for the BFS crawl
+seed_urls:
+  - https://www.ohsers.org/members/
+  - https://www.ohsers.org/employers/
+  - https://www.ohsers.org/retirees/
+
+# CFG-002: Base URL used to identify internal links
+base_url: https://www.ohsers.org
+
+# CFG-003: Only crawl pages under these path prefixes
+# Empty list means all paths on the domain are allowed
+allowed_paths:
+  - /members/
+  - /employers/
+  - /retirees/
+  - /forms/
+  - /faqs/
+  - /benefit-information/
+  - /service-retirement/
+  - /disability/
+  - /survivor-benefits/
+  - /service-credit/
+
+# CFG-004: Maximum link depth from any seed URL
+max_depth: 4
+
+# CFG-005: Maximum total pages to crawl (0 = unlimited)
+max_pages: 500
+
+# CFG-006: HTTP request timeout in seconds
+request_timeout: 30
+
+# CFG-007: Retry policy for transient failures (5xx, timeouts, connection errors)
+retry:
+  max_attempts: 3
+  backoff_factor: 2.0   # wait = backoff_factor ^ attempt seconds
+  backoff_max: 60.0
+
+# CFG-008: Where to save markdown artifacts
+output_dir: output/raw
+
+# CFG-009: Checkpoint file for pause/resume support
+checkpoint_path: output/checkpoint.json
+
+# Logging
+log_path: output/crawl.jsonl
+
+# HTTP user agent
+user_agent: "CrawlEngine/0.1 (research prototype)"
