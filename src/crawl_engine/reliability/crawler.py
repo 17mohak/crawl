@@ -18,6 +18,8 @@ from __future__ import annotations
 
 import logging
 from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
+from typing import Callable
 
 from crawl_engine.config.loader import CrawlConfig
 from crawl_engine.discovery.canonicalize import canonicalize
@@ -55,6 +57,7 @@ class Crawler:
         config: CrawlConfig,
         logger: logging.Logger,
         fetcher: HttpFetcher | None = None,
+        clock: Callable[[], datetime] | None = None,
     ) -> None:
         self.config = config
         self.logger = logger
@@ -62,6 +65,9 @@ class Crawler:
         self.queue = CrawlQueue.from_config(config)
         self.seen = SeenRegistry()
         self.stats = CrawlStats()
+        # Injectable clock for the crawled_at timestamp. A fixed clock makes a
+        # whole crawl byte-for-byte reproducible (determinism validation, CE-041).
+        self._clock = clock or (lambda: datetime.now(timezone.utc))
 
     # ── public API ────────────────────────────────────────────────────────────
 
@@ -138,7 +144,9 @@ class Crawler:
                 return
 
             page = parse_page(result.html, item.url, self.config)
-            save = save_artifact(page, item.depth, self.config, logger=self.logger)
+            save = save_artifact(
+                page, item.depth, self.config, crawled_at=self._clock(), logger=self.logger
+            )
             self.stats.pages_crawled += 1
             if save.written:
                 self.stats.artifacts_written += 1
