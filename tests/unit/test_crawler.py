@@ -187,3 +187,29 @@ def test_resume_skips_already_crawled(tmp_path):
     logger2 = setup_logger(cfg.log_path, name="test_resume_2")
     Crawler(cfg, logger2, fetcher=fetcher2).run(resume=True)
     assert fetcher2.fetched == []
+
+
+def test_resume_emits_crawl_resumed_event(tmp_path):
+    pages = {f"{BASE}/members": page("Members")}
+    cfg = make_config(tmp_path)
+    Crawler(cfg, setup_logger(cfg.log_path, name="resume_evt_1"),
+            fetcher=FakeFetcher(pages)).run()
+
+    resume_log = tmp_path / "resume.jsonl"
+    Crawler(cfg, setup_logger(resume_log, name="resume_evt_2"),
+            fetcher=FakeFetcher(pages)).run(resume=True)
+    events = [json.loads(line) for line in resume_log.read_text().strip().splitlines()]
+    assert any(e["event_type"] == "crawl_resumed" for e in events)
+
+
+def test_checkpoint_interval_triggers_midcrawl(tmp_path):
+    pages = {
+        f"{BASE}/members": page("Members", "/members/a", "/members/b"),
+        f"{BASE}/members/a": page("A"),
+        f"{BASE}/members/b": page("B"),
+    }
+    cfg = make_config(tmp_path, checkpoint_interval=1)  # checkpoint after every page
+    logger = setup_logger(cfg.log_path, name="ckpt_interval")
+    stats = Crawler(cfg, logger, fetcher=FakeFetcher(pages)).run()
+    assert stats.pages_crawled == 3
+    assert cfg.checkpoint_path.exists()

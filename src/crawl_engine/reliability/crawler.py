@@ -97,7 +97,7 @@ class Crawler:
         processed_since_checkpoint = 0
         while not self.queue.is_exhausted():
             item = self.queue.pop()
-            if item is None:
+            if item is None:  # pragma: no cover - defensive; is_exhausted() guards the loop
                 break
             self._process_page(item)
             processed_since_checkpoint += 1
