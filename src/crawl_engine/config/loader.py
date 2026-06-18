@@ -58,6 +58,39 @@ class CrawlConfig(BaseModel):
         "_ga",
     ]
 
+    # Main-content extraction (CE-024): CSS selectors tried in order; the first
+    # that matches non-empty content wins. Falls back to <body> if none match.
+    content_selectors: list[str] = [
+        "main",
+        "article",
+        "[role=main]",
+        "#main-content",
+        "#main",
+        "#content",
+        ".main-content",
+        ".content",
+    ]
+
+    # Noise removal (CE-025): elements matching these selectors are stripped
+    # before content extraction (nav, chrome, scripts, etc.).
+    noise_selectors: list[str] = [
+        "script",
+        "style",
+        "noscript",
+        "nav",
+        "header",
+        "footer",
+        "aside",
+        "form",
+        ".sidebar",
+        ".breadcrumb",
+        ".breadcrumbs",
+        ".skip-link",
+        "[role=navigation]",
+        "[role=banner]",
+        "[role=contentinfo]",
+    ]
+
     # CFG-004
     max_depth: int = 3
 
