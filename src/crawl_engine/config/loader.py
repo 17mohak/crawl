@@ -38,6 +38,26 @@ class CrawlConfig(BaseModel):
     # CFG-003: empty list = all paths allowed
     allowed_paths: list[str] = []
 
+    # Query-string keys stripped during canonicalization (CE-014).
+    # Matched case-insensitively. Defaults cover the common analytics/ad trackers.
+    tracking_params: list[str] = [
+        "utm_source",
+        "utm_medium",
+        "utm_campaign",
+        "utm_term",
+        "utm_content",
+        "gclid",
+        "gclsrc",
+        "dclid",
+        "fbclid",
+        "msclkid",
+        "mc_cid",
+        "mc_eid",
+        "yclid",
+        "igshid",
+        "_ga",
+    ]
+
     # CFG-004
     max_depth: int = 3
 
