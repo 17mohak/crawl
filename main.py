@@ -4,7 +4,6 @@ CE-001: Project builds successfully and runs locally.
 """
 import argparse
 import sys
-from pathlib import Path
 
 from crawl_engine.config.loader import load_config
 from crawl_engine.logging.logger import setup_logger

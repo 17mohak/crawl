@@ -5,7 +5,6 @@ fire when a logger is supplied, when inputs are malformed, or when config is
 invalid. Keeps the engine honest about "fails loudly / degrades gracefully".
 """
 import json
-import logging
 
 import pytest
 import requests

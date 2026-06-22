@@ -153,7 +153,13 @@ class Crawler:
             else:
                 self.stats.artifacts_unchanged += 1
 
-            self._enqueue_links(result.html, item)
+            # Resolve relative links against the page's ACTUAL fetched URL (after
+            # redirects), not the canonical queue key. Canonicalization strips the
+            # trailing slash off directory URLs (CE-015), so using item.url as the
+            # base would misresolve relative hrefs (e.g. "sub/" on "/members"
+            # -> "/sub" instead of "/members/sub"). final_url keeps the slash.
+            link_base = result.final_url or item.url
+            self._enqueue_links(result.html, item, link_base)
         except Exception as exc:  # noqa: BLE001 — failure isolation is the point
             self.stats.pages_failed += 1
             log_event(
@@ -164,9 +170,13 @@ class Crawler:
                 depth=item.depth,
             )
 
-    def _enqueue_links(self, html: str, item: QueueItem) -> None:
-        """Extract internal links, canonicalize, dedup, and enqueue the new ones."""
-        links = extract_links(html, item.url, self.config, logger=self.logger)
+    def _enqueue_links(self, html: str, item: QueueItem, base_url: str) -> None:
+        """Extract internal links, canonicalize, dedup, and enqueue the new ones.
+
+        ``base_url`` is the page's actual fetched URL (post-redirect), used to
+        resolve relative hrefs correctly.
+        """
+        links = extract_links(html, base_url, self.config, logger=self.logger)
         self.stats.links_discovered += len(links.internal)
         for url in links.internal:
             canonical = canonicalize(url, tracking_params=self.config.tracking_params)

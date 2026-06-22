@@ -213,3 +213,45 @@ def test_checkpoint_interval_triggers_midcrawl(tmp_path):
     stats = Crawler(cfg, logger, fetcher=FakeFetcher(pages)).run()
     assert stats.pages_crawled == 3
     assert cfg.checkpoint_path.exists()
+
+
+class RedirectingFetcher:
+    """Simulates a server that 301s directory URLs to add a trailing slash.
+
+    Keyed by canonical URL (no slash); reports final_url WITH the slash, as a
+    real redirect would. Used to regression-test relative-link resolution.
+    """
+
+    def __init__(self, pages: dict[str, str]):
+        self.pages = pages
+        self.fetched: list[str] = []
+
+    def fetch(self, url, logger=None):
+        self.fetched.append(url)
+        if url not in self.pages:
+            return FetchResult(url=url, ok=False, status_code=404, error="http_404", attempts=1)
+        return FetchResult(
+            url=url, ok=True, status_code=200, html=self.pages[url],
+            content_type="text/html", final_url=url + "/", attempts=1,  # redirected
+        )
+
+
+def test_relative_links_resolved_against_final_url_not_canonical(tmp_path):
+    """Regression: relative hrefs must resolve against the post-redirect URL.
+
+    Canonicalization strips the trailing slash from /members/, so resolving the
+    relative link 'service-retirement/' against the canonical '/members' would
+    wrongly yield '/service-retirement' (outside allowed_paths) and be skipped.
+    It must resolve against final_url '/members/' -> '/members/service-retirement'.
+    """
+    pages = {
+        # relative link, not root-relative:
+        f"{BASE}/members": page("Members", "service-retirement/"),
+        f"{BASE}/members/service-retirement": page("SR"),
+    }
+    cfg = make_config(tmp_path, allowed_paths=["/members/"])
+    logger = setup_logger(cfg.log_path, name="relative_links")
+    stats = Crawler(cfg, logger, fetcher=RedirectingFetcher(pages)).run()
+
+    assert stats.pages_crawled == 2
+    assert (cfg.output_dir / "members" / "service-retirement" / "index.md").exists()

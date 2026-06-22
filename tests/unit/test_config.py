@@ -2,13 +2,12 @@
 
 AC-017: Config loads and validates successfully.
 """
-import textwrap
 from pathlib import Path
 
 import pytest
 import yaml
 
-from crawl_engine.config.loader import CrawlConfig, load_config
+from crawl_engine.config.loader import load_config
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────

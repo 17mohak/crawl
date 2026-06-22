@@ -3,10 +3,7 @@
 AC-015: Log file generated with required schema fields.
 """
 import json
-import logging
-from pathlib import Path
 
-import pytest
 
 from crawl_engine.logging.logger import log_event, setup_logger
 
