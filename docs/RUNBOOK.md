@@ -191,10 +191,14 @@ main.py
 
 ## 9. Known limitations / open items
 
-1. **No live crawl has been run.** All tests use synthetic HTML. The default
-   `content_selectors`/`noise_selectors` are generic and **unverified against
-   the real `ohsers.org` DOM** (CE-024). Validate and tune them on real pages
-   before relying on extraction quality.
+1. **Selectors validated on one page type only.** The `content_selectors` /
+   `noise_selectors` in `config/config.yaml` were tuned and confirmed against the
+   live `ohsers.org` DOM for the `/members/` landing page (a WordPress theme that
+   wraps content in `<main id="page-wrapper">` and builds nav from `<div>`/`<ul>`
+   menus, which the defaults now strip). Other page types (statutory text, forms
+   index, news articles) have **not** yet been spot-checked — verify extraction
+   quality on a sample of each before a full production crawl. A broader crawl has
+   not been run; only single-page fetches were used to tune selectors.
 2. **Frontmatter schema unconfirmed** (see §4) — pending the requirements doc.
 3. **URL canonicalization is faithful to the backlog scope only** — it lowercases
    scheme/host, strips fragments, strips tracking params, and normalizes trailing

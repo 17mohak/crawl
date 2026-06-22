@@ -25,6 +25,43 @@ allowed_paths:
   - /survivor-benefits/
   - /service-credit/
 
+# Main-content extraction (CE-024). The ohsers.org WordPress theme wraps page
+# content in <main id="page-wrapper" role="main">. Selectors are tried in order;
+# the first non-empty match wins. Validated against the live DOM 2026-06-18.
+content_selectors:
+  - main
+  - "[role=main]"
+  - "#page-wrapper"
+  - article
+  - "#content"
+  - ".content"
+
+# Noise removal (CE-025). ohsers.org builds its nav from <div>/<ul> menus inside
+# <main> (e.g. #page-header-menu, #utility-menu, #interior-menu, .navbar-nav,
+# li.menu-item), which semantic-tag rules don't catch. These were confirmed
+# against the live page; without them the nav mega-menu leaks into the artifact.
+noise_selectors:
+  - script
+  - style
+  - noscript
+  - nav
+  - header
+  - footer
+  - aside
+  - form
+  - "[role=navigation]"
+  - "[role=banner]"
+  - "[role=contentinfo]"
+  - ".navbar-nav"
+  - ".menu-item"
+  - "[class*=menu-container]"
+  - "#page-header-menu"
+  - "#utility-menu"
+  - "#interior-menu"
+  - ".breadcrumb"
+  - ".breadcrumbs"
+  - ".skip-link"
+
 # CFG-004: Maximum link depth from any seed URL
 max_depth: 4
 

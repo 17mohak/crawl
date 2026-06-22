@@ -148,6 +148,30 @@ def test_parse_page_end_to_end():
     assert "Home | Members" not in page.text
 
 
+def test_div_based_nav_menus_are_stripped():
+    """Regression for the ohsers.org WordPress theme: nav built from
+    <div>/<ul> menus (not <nav>) must still be removed via the default
+    .navbar-nav / .menu-item / [class*=menu-container] noise selectors."""
+    html = """
+    <html><body><main>
+      <div class="menu-utility-menu-container">
+        <ul class="navbar-nav"><li class="menu-item">Login</li></ul>
+      </div>
+      <div id="page-header-menu">
+        <ul class="navbar-nav"><li class="menu-item">Benefits</li>
+        <li class="menu-item">Retirement Basics</li></ul>
+      </div>
+      <h1>Members</h1>
+      <p>Welcome to the real content.</p>
+    </main></body></html>
+    """
+    page = parse_page(html, "https://www.ohsers.org/members/", make_config())
+    assert "Welcome to the real content." in page.text
+    assert "Benefits" not in page.text
+    assert "Retirement Basics" not in page.text
+    assert "Login" not in page.text
+
+
 def test_parse_page_handles_empty_html():
     page = parse_page("", URL, make_config())
     assert page.title == ""

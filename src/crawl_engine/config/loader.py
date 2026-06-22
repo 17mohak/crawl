@@ -72,7 +72,9 @@ class CrawlConfig(BaseModel):
     ]
 
     # Noise removal (CE-025): elements matching these selectors are stripped
-    # before content extraction (nav, chrome, scripts, etc.).
+    # before content extraction (nav, chrome, scripts, etc.). Includes common
+    # WordPress/Bootstrap menu patterns, since many sites (incl. ohsers.org)
+    # build navigation from <div>/<ul> menus rather than semantic <nav> tags.
     noise_selectors: list[str] = [
         "script",
         "style",
@@ -89,6 +91,10 @@ class CrawlConfig(BaseModel):
         "[role=navigation]",
         "[role=banner]",
         "[role=contentinfo]",
+        ".navbar-nav",          # Bootstrap nav lists
+        ".menu-item",           # WordPress menu items
+        "[class*=menu-container]",  # WordPress menu wrappers
+        "[class*=nav-menu]",
     ]
 
     # CFG-004
