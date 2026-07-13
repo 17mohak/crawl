@@ -163,7 +163,12 @@ class Crawler:
     def _seed(self) -> None:
         """Canonicalize seed URLs, register them, and queue them at depth 0."""
         for url in self.config.seed_urls:
-            canonical = canonicalize(url, tracking_params=self.config.tracking_params)
+            canonical = canonicalize(
+                url,
+                tracking_params=self.config.tracking_params,
+                strip_www=self.config.canonical_strip_www,
+                force_https=self.config.canonical_force_https,
+            )
             if self.seen.mark_seen(canonical):
                 self.queue.push(canonical, depth=0, logger=self.logger)
 
@@ -226,7 +231,12 @@ class Crawler:
         links = extract_links(html, base_url, self.config, logger=self.logger)
         self.stats.links_discovered += len(links.internal)
         for url in links.internal:
-            canonical = canonicalize(url, tracking_params=self.config.tracking_params)
+            canonical = canonicalize(
+                url,
+                tracking_params=self.config.tracking_params,
+                strip_www=self.config.canonical_strip_www,
+                force_https=self.config.canonical_force_https,
+            )
             if self.seen.mark_seen(canonical):
                 self.queue.push(canonical, depth=item.depth + 1, logger=self.logger)
 

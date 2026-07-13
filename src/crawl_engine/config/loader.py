@@ -122,6 +122,12 @@ class CrawlConfig(BaseModel):
     # (Full robots.txt handling is a separate, larger scope item.)
     crawl_delay: float = 0.0
 
+    # Optional canonicalization folding (D9). Off by default to preserve the
+    # literal CE-012..016 behaviour. Enable if the site mixes www/non-www or
+    # http/https for the same content and you want them deduplicated.
+    canonical_strip_www: bool = False
+    canonical_force_https: bool = False
+
     # Logging
     log_path: Path = Path("output/crawl.jsonl")
 

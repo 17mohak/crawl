@@ -97,7 +97,12 @@ def save_artifact(
     if crawled_at is None:
         crawled_at = datetime.now(timezone.utc)
 
-    canonical = canonicalize(page.url, tracking_params=config.tracking_params)
+    canonical = canonicalize(
+        page.url,
+        tracking_params=config.tracking_params,
+        strip_www=config.canonical_strip_www,
+        force_https=config.canonical_force_https,
+    )
     path = url_to_path(canonical, config.output_dir)
     document, content_hash = build_markdown_document(page, depth, canonical, crawled_at)
 

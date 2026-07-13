@@ -120,6 +120,29 @@ def test_equivalent_variants_collapse_to_one_key():
     assert canonical == {"https://www.ohsers.org/members"}
 
 
+def test_strip_www_folds_host():
+    # D9 (opt-in): www and non-www dedup together when enabled.
+    assert canonicalize("https://www.ohsers.org/members", strip_www=True) == (
+        "https://ohsers.org/members"
+    )
+    assert canonicalize("https://www.ohsers.org/members", strip_www=True) == canonicalize(
+        "https://ohsers.org/members", strip_www=True
+    )
+
+
+def test_force_https_folds_scheme():
+    # D9 (opt-in): http and https dedup together when enabled.
+    assert canonicalize("http://www.ohsers.org/members", force_https=True) == (
+        "https://www.ohsers.org/members"
+    )
+
+
+def test_folding_flags_off_by_default():
+    # Defaults must NOT fold (preserve literal CE-012..016 behaviour).
+    assert canonicalize("https://www.ohsers.org/members") == "https://www.ohsers.org/members"
+    assert canonicalize("http://www.ohsers.org/members") == "http://www.ohsers.org/members"
+
+
 def test_handoff_example_documents_actual_behavior():
     """HANDOFF.md's worked example overreaches the actual CE-012..016 tasks.
 

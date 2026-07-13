@@ -52,6 +52,8 @@ def canonicalize(
     url: str,
     base: str | None = None,
     tracking_params: list[str] | frozenset[str] | None = None,
+    strip_www: bool = False,
+    force_https: bool = False,
 ) -> str:
     """Return the canonical form of ``url``.
 
@@ -61,6 +63,10 @@ def canonicalize(
             references (CE-016). If ``None``, ``url`` is assumed absolute.
         tracking_params: Query keys to strip (CE-014), matched
             case-insensitively. Defaults to :data:`DEFAULT_TRACKING_PARAMS`.
+        strip_www: If True, fold a leading ``www.`` off the host so
+            ``www.host`` and ``host`` dedup together (D9). Off by default.
+        force_https: If True, rewrite an ``http`` scheme to ``https`` so the two
+            dedup together (D9). Off by default.
 
     Returns:
         A canonical absolute URL string. Equivalent inputs (differing only by
@@ -80,7 +86,11 @@ def canonicalize(
 
     # CE-012: lowercase scheme and host only (not the path).
     scheme = parts.scheme.lower()
+    if force_https and scheme == "http":  # D9 (opt-in)
+        scheme = "https"
     netloc = parts.netloc.lower()
+    if strip_www and netloc.startswith("www."):  # D9 (opt-in)
+        netloc = netloc[4:]
 
     # CE-014: drop tracking query params, keep the rest in their original order.
     kept_pairs = [
