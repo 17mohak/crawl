@@ -1,6 +1,6 @@
 """diagnose.py - single-run diagnostic build for the OHSERS crawl engine.
 
-Purpose: let anyone (e.g. Sameer) run the project ONCE and immediately identify
+Purpose: let anyone run the project ONCE and immediately identify
 *which category* of failure they are seeing - packaging, configuration, network,
 or crawl logic - without guessing.
 
@@ -146,6 +146,12 @@ def run_instrumented(config_path: str, max_pages: int):
     print(SEP)
     print("4. CONFIGURATION")
     print(SEP)
+    # Resolve a config path that doesn't exist relative to the current directory
+    # against the repo root, so `python diagnose.py` works from any CWD.
+    if not Path(config_path).exists():
+        repo_relative = _SRC.parent / config_path
+        if repo_relative.exists():
+            config_path = str(repo_relative)
     try:
         cfg = load_config(config_path)
     except Exception as exc:

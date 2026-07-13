@@ -35,8 +35,16 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    # Resolve a config path that isn't found relative to the current directory
+    # against the repo root, so `python main.py` works from any CWD.
+    config_path = args.config
+    if not Path(config_path).exists():
+        repo_relative = _SRC.parent / config_path
+        if repo_relative.exists():
+            config_path = str(repo_relative)
+
     try:
-        config = load_config(args.config)
+        config = load_config(config_path)
     except FileNotFoundError as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
