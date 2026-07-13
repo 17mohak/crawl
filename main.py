@@ -67,6 +67,24 @@ def main() -> int:
     print(f"  Artifacts unchanged: {stats.artifacts_unchanged}")
     print(f"  Links discovered   : {stats.links_discovered}")
 
+    # D11: don't report a silent "success" when nothing was actually crawled.
+    if stats.pages_crawled == 0:
+        if stats.pages_failed > 0:
+            print(
+                "\nERROR: 0 pages crawled and every fetch failed. The site appears "
+                "unreachable\nfrom this machine. Check network / proxy / VPN / firewall, "
+                "and whether the\nsite is blocking the configured user-agent. "
+                "(See the log for per-URL reasons.)",
+                file=sys.stderr,
+            )
+            return 2
+        print(
+            "\nWARNING: 0 pages crawled and no fetch failures. The seeds were likely "
+            "filtered\nout (check base_url / allowed_paths) or the seed list is empty.",
+            file=sys.stderr,
+        )
+        return 3
+
     return 0
 
 

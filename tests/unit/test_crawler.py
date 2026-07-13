@@ -202,6 +202,28 @@ def test_resume_emits_crawl_resumed_event(tmp_path):
     assert any(e["event_type"] == "crawl_resumed" for e in events)
 
 
+def test_all_fetches_failed_emits_warning_event(tmp_path):
+    # D11: an empty/unreachable site (all seeds fail) must emit a distinct
+    # warning event rather than looking like a silent empty success.
+    cfg = make_config(tmp_path)
+    logger = setup_logger(cfg.log_path, name="all_failed")
+    stats = Crawler(cfg, logger, fetcher=FakeFetcher({})).run()  # empty site -> seeds 404
+    assert stats.pages_crawled == 0
+    assert stats.pages_failed >= 1
+    events = [json.loads(line) for line in cfg.log_path.read_text().strip().splitlines()]
+    assert any(e["event_type"] == "crawl_all_fetches_failed" for e in events)
+
+
+def test_partial_success_does_not_emit_all_failed_warning(tmp_path):
+    pages = {f"{BASE}/members": page("Members")}  # only members reachable
+    cfg = make_config(tmp_path, seed_urls=[f"{BASE}/members/", f"{BASE}/employers/"])
+    logger = setup_logger(cfg.log_path, name="partial")
+    stats = Crawler(cfg, logger, fetcher=FakeFetcher(pages)).run()
+    assert stats.pages_crawled == 1
+    events = [json.loads(line) for line in cfg.log_path.read_text().strip().splitlines()]
+    assert not any(e["event_type"] == "crawl_all_fetches_failed" for e in events)
+
+
 def test_checkpoint_interval_triggers_midcrawl(tmp_path):
     pages = {
         f"{BASE}/members": page("Members", "/members/a", "/members/b"),

@@ -106,6 +106,20 @@ class Crawler:
                 processed_since_checkpoint = 0
 
         self._checkpoint()
+
+        # D11: distinguish "nothing to crawl" from "could not reach the site".
+        # If not a single page succeeded yet fetches were attempted and failed,
+        # the site is almost certainly unreachable (network/proxy/firewall/block)
+        # — surface it loudly instead of exiting as a silent empty success.
+        if self.stats.pages_crawled == 0 and self.stats.pages_failed > 0:
+            log_event(
+                self.logger,
+                "crawl_all_fetches_failed",
+                level=logging.WARNING,
+                pages_failed=self.stats.pages_failed,
+                hint="site unreachable? check network / proxy / VPN / firewall / user-agent",
+            )
+
         log_event(
             self.logger,
             "crawl_finished",
