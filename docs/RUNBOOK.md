@@ -18,10 +18,23 @@ Requires Python ≥ 3.11.
 ```bash
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
-pip install -e ".[dev]"
+pip install -e ".[dev]"            # installs deps + package + pytest/coverage
 ```
 
-If you haven't run `pip install -e .`, prefix commands with `PYTHONPATH=src`.
+**No editable install required.** The `src/` layout is importable without
+`pip install -e .`: `pytest` uses `pythonpath = ["src"]` and `main.py`/`diagnose.py`
+bootstrap `src` onto `sys.path`. So a dependency-only setup also works:
+
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt    # runtime deps only (add `pytest` to run tests)
+python main.py --config config/config.yaml
+```
+
+> **If something looks broken, run the diagnostic first:** `python diagnose.py`.
+> It reports your interpreter/venv, installed versions, and a one-word verdict
+> (PACKAGING / CONFIG / NETWORK / CRAWL-LOGIC / OK) with a decision tree. The
+> exit code encodes the category. See §10.
 
 ---
 
@@ -43,17 +56,25 @@ artifacts written / unchanged, links discovered) and writes:
 - a JSONL event log at `log_path` (default `output/crawl.jsonl`)
 - a checkpoint at `checkpoint_path` (default `output/checkpoint.json`)
 
+**Exit codes** (so failures aren't silent): `0` success · `1` bad/missing config ·
+`2` **0 pages crawled and every fetch failed** — the site is unreachable, check
+network / proxy / VPN / firewall / user-agent · `3` 0 pages crawled with no fetch
+failures (seeds filtered by `allowed_paths`/`base_url`, or empty) · `130`
+interrupted (Ctrl-C; progress checkpointed).
+
 ### Resuming
 
-The crawl checkpoints every `checkpoint_interval` pages and once at the end. To
-continue an interrupted run:
+The crawl writes a checkpoint **immediately after seeding**, every
+`checkpoint_interval` pages, on **Ctrl-C**, and once at the end — so an
+interrupted run (even a short one) is always resumable:
 
 ```bash
 python main.py --config config/config.yaml --resume
 ```
 
 Resume rebuilds the BFS queue and the Seen-URL registry from the checkpoint, so
-already-crawled URLs are not refetched. Combined with skip-unchanged writes
+already-crawled URLs are not refetched. The summary distinguishes work done
+**this session** from cumulative totals. Combined with skip-unchanged writes
 (below), resuming is always safe to re-run.
 
 ---
@@ -81,6 +102,9 @@ error.
 | `content_selectors` | — | main, article, #content, … | Main-content CSS selectors (first non-empty wins) |
 | `noise_selectors` | — | nav, header, footer, script, … | Elements stripped before extraction |
 | `checkpoint_interval` | — | `50` | Pages between checkpoint saves |
+| `crawl_delay` | — | `0.0` | Politeness delay (seconds) before each request; `0` = none |
+| `canonical_strip_www` | — | `false` | Fold `www.host` and `host` together for dedup |
+| `canonical_force_https` | — | `false` | Treat `http` and `https` as the same URL for dedup |
 
 > **Tuning content extraction:** if artifacts contain navigation/boilerplate or
 > miss real content, adjust `content_selectors` / `noise_selectors` in the YAML —
@@ -99,7 +123,7 @@ Each artifact is YAML frontmatter followed by the Markdown body:
 
 ```markdown
 ---
-url: https://www.ohsers.org/members/service-retirement
+url: https://www.ohsers.org/members/service-retirement/
 canonical_url: https://www.ohsers.org/members/service-retirement
 title: Service Retirement
 crawled_at: '2026-06-18T10:23:00Z'
@@ -112,6 +136,9 @@ source_section: members
 
 ...converted markdown body...
 ```
+
+`url` is the URL actually fetched (after redirects, trailing slash preserved);
+`canonical_url` is the normalized dedup key that also determines the file path.
 
 > ⚠️ **Frontmatter schema is inferred, not yet confirmed.** The field set above
 > comes from the handoff example; the requirements document behind FR-007 has
@@ -133,6 +160,11 @@ source_section: members
   `os.replace`d into place — a crash never leaves a corrupt partial file.
 - **Failure isolation (NFR-007):** a single page's fetch/parse/save failure is
   logged (`page_failed`) and counted; the crawl continues to the next URL.
+- **Total-failure surfacing:** if *every* fetch fails (site unreachable), the run
+  does not exit as a silent empty success — it logs `crawl_all_fetches_failed`
+  and the CLI exits non-zero with a connectivity message.
+- **Resumability:** progress is checkpointed at start, periodically, on Ctrl-C,
+  and at the end, so an interrupted crawl resumes rather than restarting.
 
 ---
 
@@ -141,11 +173,16 @@ source_section: members
 Every event is one JSON object per line (JSONL) for machine analysis. All
 modules emit via `log_event()`; never use `logger.info("string")` directly.
 
-Common event types: `crawl_started`, `crawl_resumed`, `crawl_finished`,
-`url_discovered`, `url_skipped` (reasons: `external`, `path_not_allowed`,
-`already_queued`, `max_depth_exceeded`, `non_html`), `page_fetched`,
-`fetch_retry`, `page_failed`, `links_extracted`, `file_saved`, `file_skipped`,
-`queue_saved`.
+Common event types: `crawl_started`, `crawl_resumed`, `crawl_interrupted`,
+`crawl_finished`, `crawl_all_fetches_failed`, `url_discovered`, `url_skipped`
+(reasons: `external`, `path_not_allowed`, `already_queued`, `max_depth_exceeded`,
+`non_html`), `page_fetched`, `fetch_retry`, `page_failed`, `links_extracted`,
+`file_saved`, `file_skipped`, `queue_saved`.
+
+**Console vs. file:** the JSONL file records *everything*. The console (stdout)
+filters out the high-frequency per-link events (`url_discovered`, `url_skipped`,
+`links_extracted`) so a real crawl doesn't flood the terminal; progress events
+(fetched / saved / failed / started / finished) still print.
 
 Inspect, e.g.:
 
@@ -159,14 +196,16 @@ grep page_failed output/crawl.jsonl
 
 ```bash
 pytest tests/ -v                                  # unit + integration
-pytest tests/unit/ -v                             # unit only
+pytest tests/ -m "not live"                        # skip localhost-socket tests
 pytest tests/ --cov=crawl_engine --cov-report=term-missing
 ```
 
 Integration tests (`tests/integration/`) run the full crawl loop against an
 in-memory site (`conftest.py::LocalSiteFetcher`) — no network. They cover the
 validation tasks: determinism (CE-041), idempotency (CE-042), provenance
-(CE-043), and reliability/bounded-failure (CE-044).
+(CE-043), and reliability/bounded-failure (CE-044). The `test_live_server.py`
+tests bind a real localhost socket and are marked `live`; deselect them in
+restricted environments with `-m "not live"`.
 
 ---
 
@@ -200,11 +239,34 @@ main.py
    quality on a sample of each before a full production crawl. A broader crawl has
    not been run; only single-page fetches were used to tune selectors.
 2. **Frontmatter schema unconfirmed** (see §4) — pending the requirements doc.
-3. **URL canonicalization is faithful to the backlog scope only** — it lowercases
-   scheme/host, strips fragments, strips tracking params, and normalizes trailing
-   slashes. It does *not* force `http`→`https`, fold `www`, or lowercase the
-   path. If `ohsers.org` mixes those variants for internal links, add those
-   steps in `discovery/canonicalize.py`.
-4. **Scope is `ohsers.org` only.** The research proposal also references Ohio
+3. **URL canonicalization** lowercases scheme/host, strips fragments, strips
+   tracking params, and normalizes trailing slashes. It does *not* fold `www` or
+   force `http`→`https` **by default** (to match the literal CE-012..016 scope),
+   but both are now available as opt-in config flags (`canonical_strip_www`,
+   `canonical_force_https`) if the site mixes those variants. Path case is left
+   as-is (paths can be case-sensitive).
+4. **No robots.txt compliance.** A politeness delay is available (`crawl_delay`),
+   but the engine does not yet parse or honour `robots.txt`. ohsers.org's
+   robots.txt currently permits crawling; confirm scope before relying on this
+   for other hosts.
+5. **Scope is `ohsers.org` only.** The research proposal also references Ohio
    Revised Code Ch. 3309 statutory text; ingesting that is not currently in this
    engine's scope — confirm whether it should be.
+
+---
+
+## 10. Diagnosing a failed run (`diagnose.py`)
+
+If a run misbehaves, run the single-shot diagnostic instead of guessing:
+
+```bash
+python diagnose.py                       # uses config/config.yaml, bounded to 8 pages
+python diagnose.py --config <file> --max-pages 5
+```
+
+It prints interpreter/venv status, installed package versions, import status,
+the config + seeds, every fetch attempt with its response status, queue
+growth/shrink per iteration, URL rejection reasons, full tracebacks, final
+stats, and a **VERDICT** with a symptom→cause decision tree. The exit code
+encodes the category: `0` OK · `2` PACKAGING · `3` CONFIG · `4` NETWORK ·
+`5` CRAWL-LOGIC. Paste sections 1–3 and 7 when reporting an issue.
