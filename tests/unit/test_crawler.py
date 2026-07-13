@@ -289,6 +289,22 @@ class RedirectingFetcher:
         )
 
 
+def test_frontmatter_url_reflects_fetched_url_distinct_from_canonical(tmp_path):
+    # D4: `url` should be the actually-fetched URL (post-redirect, trailing slash)
+    # and `canonical_url` the slash-stripped dedup key — the two must differ here.
+    import yaml
+    pages = {f"{BASE}/members": page("Members")}
+    cfg = make_config(tmp_path)
+    logger = setup_logger(cfg.log_path, name="d4_url")
+    Crawler(cfg, logger, fetcher=RedirectingFetcher(pages)).run()
+
+    text = (cfg.output_dir / "members" / "index.md").read_text(encoding="utf-8")
+    fm = yaml.safe_load(text[4:text.index("\n---", 4)])
+    assert fm["url"] == f"{BASE}/members/"          # real fetched URL (redirect target)
+    assert fm["canonical_url"] == f"{BASE}/members"  # dedup key
+    assert fm["url"] != fm["canonical_url"]
+
+
 def test_relative_links_resolved_against_final_url_not_canonical(tmp_path):
     """Regression: relative hrefs must resolve against the post-redirect URL.
 

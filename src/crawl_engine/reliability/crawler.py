@@ -174,7 +174,11 @@ class Crawler:
                 log_event(self.logger, "url_skipped", url=item.url, reason="non_html")
                 return
 
-            page = parse_page(result.html, item.url, self.config)
+            # D4: record the URL actually fetched (after redirects) as the page's
+            # `url`, so the frontmatter `url` (real, e.g. trailing slash preserved)
+            # is distinct from `canonical_url` (dedup key) and carries real
+            # provenance instead of duplicating it.
+            page = parse_page(result.html, result.final_url or item.url, self.config)
             save = save_artifact(
                 page, item.depth, self.config, crawled_at=self._clock(), logger=self.logger
             )
