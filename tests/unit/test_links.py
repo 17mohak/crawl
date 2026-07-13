@@ -109,6 +109,25 @@ def test_empty_allowed_paths_allows_all_internal():
     assert result.disallowed == []
 
 
+def test_section_root_without_trailing_slash_is_allowed():
+    # D2 regression: a link to the bare section root (no trailing slash) must be
+    # allowed under prefix '/forms/', not dropped.
+    html = '<a href="/forms">forms root</a><a href="/forms/">forms slash</a>'
+    result = extract_links(html, PAGE, make_config(allowed_paths=["/forms/"]))
+    assert "https://www.ohsers.org/forms" in result.internal
+    assert "https://www.ohsers.org/forms/" in result.internal
+    assert result.disallowed == []
+
+
+def test_allowed_path_prefix_does_not_match_unrelated_sibling():
+    # D2: prefix '/members/' must NOT match '/members-area/...' (shared string
+    # but different section).
+    html = '<a href="/members-area/x">out</a><a href="/members/y">in</a>'
+    result = extract_links(html, PAGE, make_config(allowed_paths=["/members/"]))
+    assert result.internal == ["https://www.ohsers.org/members/y"]
+    assert result.disallowed == ["https://www.ohsers.org/members-area/x"]
+
+
 def test_disallowed_path_logged(tmp_path):
     import json
     from crawl_engine.logging.logger import setup_logger

@@ -50,12 +50,22 @@ def _same_host(url: str, base_url: str) -> bool:
 def _path_allowed(url: str, allowed_paths: list[str]) -> bool:
     """True if the URL's path is under one of the allowed prefixes.
 
+    Matching is trailing-slash insensitive: a prefix ``/forms/`` matches both the
+    section root ``/forms`` and any descendant ``/forms/...``, but NOT an
+    unrelated path that merely shares the prefix string (``/formshub``). This
+    keeps filtering consistent with canonicalization, which strips trailing
+    slashes (so a section root linked without a slash is not wrongly dropped).
+
     An empty ``allowed_paths`` list means every path on the host is allowed.
     """
     if not allowed_paths:
         return True
     path = urlparse(url).path
-    return any(path.startswith(prefix) for prefix in allowed_paths)
+    for prefix in allowed_paths:
+        base = prefix.rstrip("/")
+        if path == base or path.startswith(base + "/"):
+            return True
+    return False
 
 
 def _iter_hrefs(html: str) -> list[str]:
