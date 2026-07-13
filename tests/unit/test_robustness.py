@@ -38,6 +38,11 @@ def test_request_timeout_below_one_rejected():
         _cfg(request_timeout=0)
 
 
+def test_negative_crawl_delay_rejected():
+    with pytest.raises(Exception):
+        _cfg(crawl_delay=-1.0)
+
+
 def test_load_config_rejects_non_mapping(tmp_path):
     p = tmp_path / "bad.yaml"
     p.write_text("- just\n- a\n- list\n", encoding="utf-8")

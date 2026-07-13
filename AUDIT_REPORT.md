@@ -41,6 +41,14 @@ directly.
 D2 (path-filter trailing-slash logic bug — confirmed by reproduction), D11 (silent total-fetch
 failure), D10 (checkpoint robustness), D3 (log volume), and lower-severity D4–D9.
 
+> **RESOLUTION STATUS — all defects fixed.** Every defect below has since been repaired, each
+> as its own commit with regression tests. The suite is now **192 passing, 99% coverage,
+> ruff-clean**, and a **deps-only environment with no editable install now runs `pytest` and
+> `main.py`** (the original D1 failure). Fix commits: D1 `947c084` · D2 `aed7996` ·
+> D11 `e9451ff` · D10 `109eb18` · D3 `7f63906` · D4 `2ba2e1a` · D5 `1630f8e` · D6 `1f1a9a0` ·
+> D8 `8906c6d` · D7 `ec58fc1` · D9 `79113a2`. The per-defect entries in §5 remain as the record
+> of what was wrong and why.
+
 **What could not be reproduced:** any *assertion-level* test failure, or an *early-stopping /
 minimal* crawl, under a correctly installed environment with network access. If the operator
 observed assertion failures (not import/collection errors) or a healthy-network run that still
