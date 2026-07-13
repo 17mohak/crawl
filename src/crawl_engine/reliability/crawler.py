@@ -94,16 +94,33 @@ class Crawler:
             resume=resume,
         )
 
+        # D10: write an initial checkpoint immediately so an interruption before
+        # the first `checkpoint_interval` boundary is still resumable.
+        self._checkpoint()
+
         processed_since_checkpoint = 0
-        while not self.queue.is_exhausted():
-            item = self.queue.pop()
-            if item is None:  # pragma: no cover - defensive; is_exhausted() guards the loop
-                break
-            self._process_page(item)
-            processed_since_checkpoint += 1
-            if processed_since_checkpoint >= self.config.checkpoint_interval:
-                self._checkpoint()
-                processed_since_checkpoint = 0
+        try:
+            while not self.queue.is_exhausted():
+                item = self.queue.pop()
+                if item is None:  # pragma: no cover - defensive; is_exhausted() guards the loop
+                    break
+                self._process_page(item)
+                processed_since_checkpoint += 1
+                if processed_since_checkpoint >= self.config.checkpoint_interval:
+                    self._checkpoint()
+                    processed_since_checkpoint = 0
+        except KeyboardInterrupt:
+            # D10: persist progress before propagating, so `--resume` continues
+            # from where the crawl was interrupted rather than restarting.
+            self._checkpoint()
+            log_event(
+                self.logger,
+                "crawl_interrupted",
+                level=logging.WARNING,
+                pages_crawled=self.stats.pages_crawled,
+                pending=self.queue.pending_count,
+            )
+            raise
 
         self._checkpoint()
 

@@ -224,6 +224,37 @@ def test_partial_success_does_not_emit_all_failed_warning(tmp_path):
     assert not any(e["event_type"] == "crawl_all_fetches_failed" for e in events)
 
 
+def test_interrupt_checkpoints_and_reraises(tmp_path):
+    # D10: a KeyboardInterrupt mid-crawl must checkpoint (so --resume works) and
+    # propagate, rather than losing all progress.
+    import pytest
+
+    class InterruptingFetcher:
+        def __init__(self, pages):
+            self.pages = pages
+            self.calls = 0
+
+        def fetch(self, url, logger=None):
+            self.calls += 1
+            if self.calls >= 2:
+                raise KeyboardInterrupt
+            return FetchResult(url=url, ok=True, status_code=200, html=self.pages[url],
+                               content_type="text/html", final_url=url, attempts=1)
+
+    pages = {
+        f"{BASE}/members": page("Members", "/members/a"),
+        f"{BASE}/members/a": page("A"),
+    }
+    cfg = make_config(tmp_path, checkpoint_interval=50)  # would not checkpoint before 50
+    logger = setup_logger(cfg.log_path, name="interrupt")
+    with pytest.raises(KeyboardInterrupt):
+        Crawler(cfg, logger, fetcher=InterruptingFetcher(pages)).run()
+
+    assert cfg.checkpoint_path.exists()  # progress persisted despite <50 pages
+    events = [json.loads(line) for line in cfg.log_path.read_text().strip().splitlines()]
+    assert any(e["event_type"] == "crawl_interrupted" for e in events)
+
+
 def test_checkpoint_interval_triggers_midcrawl(tmp_path):
     pages = {
         f"{BASE}/members": page("Members", "/members/a", "/members/b"),

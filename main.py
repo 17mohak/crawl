@@ -56,7 +56,14 @@ def main() -> int:
     print()
     print("Starting crawl...")
 
-    stats = Crawler(config, logger).run(resume=args.resume)
+    try:
+        stats = Crawler(config, logger).run(resume=args.resume)
+    except KeyboardInterrupt:
+        print(
+            "\nInterrupted. Progress was checkpointed — resume with --resume.",
+            file=sys.stderr,
+        )
+        return 130
 
     print()
     print("Crawl finished.")
