@@ -5,6 +5,7 @@ fire when a logger is supplied, when inputs are malformed, or when config is
 invalid. Keeps the engine honest about "fails loudly / degrades gracefully".
 """
 import json
+import logging
 
 import pytest
 import requests
@@ -59,6 +60,25 @@ def test_setup_logger_is_idempotent(tmp_path):
     second = setup_logger(log_path, name="reconfig_test")
     assert second is first
     assert len(second.handlers) == handler_count  # handlers not doubled
+
+
+def test_setup_logger_repoints_to_new_path(tmp_path):
+    # D6: re-calling with the same name but a NEW log_path must honor the new
+    # path, not silently keep writing to the old file.
+    path_a = tmp_path / "a.jsonl"
+    path_b = tmp_path / "b.jsonl"
+    logger = setup_logger(path_a, name="repoint_test")
+    setup_logger(path_b, name="repoint_test")  # same logger, new path
+
+    from crawl_engine.logging.logger import log_event
+    log_event(logger, "page_fetched", url="https://x")
+
+    assert path_b.exists() and "page_fetched" in path_b.read_text()
+    # the new event must not have gone to the old file
+    assert not path_a.exists() or "page_fetched" not in path_a.read_text()
+    # file handlers not duplicated
+    file_handlers = [h for h in logger.handlers if isinstance(h, logging.FileHandler)]
+    assert len(file_handlers) == 1
 
 
 # ── queue logging branches ────────────────────────────────────────────────────

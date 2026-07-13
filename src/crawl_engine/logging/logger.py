@@ -48,7 +48,20 @@ def setup_logger(log_path: Path, name: str = "crawl_engine") -> logging.Logger:
     logger.setLevel(logging.DEBUG)
 
     if logger.handlers:
-        return logger  # Already configured
+        # Already configured. If a *different* log_path is requested, repoint the
+        # file handler instead of silently ignoring the new path (D6).
+        target = str(Path(log_path).resolve())
+        file_handlers = [h for h in logger.handlers if isinstance(h, logging.FileHandler)]
+        if file_handlers and str(Path(file_handlers[0].baseFilename).resolve()) != target:
+            Path(log_path).parent.mkdir(parents=True, exist_ok=True)
+            new_fh = logging.FileHandler(log_path, encoding="utf-8")
+            new_fh.setLevel(logging.DEBUG)
+            new_fh.setFormatter(JSONLFormatter())
+            for h in file_handlers:
+                logger.removeHandler(h)
+                h.close()
+            logger.addHandler(new_fh)
+        return logger
 
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
