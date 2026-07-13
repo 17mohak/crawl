@@ -8,6 +8,22 @@ import json
 from crawl_engine.logging.logger import log_event, setup_logger
 
 
+def test_console_filters_noisy_events_but_file_keeps_them(tmp_path, capsys):
+    # D3: url_discovered/url_skipped/links_extracted stay in the JSONL file but
+    # are filtered off stdout; progress events (page_fetched) still print.
+    log_path = tmp_path / "crawl.jsonl"
+    logger = setup_logger(log_path, name="test_console_filter")
+    log_event(logger, "url_discovered", url="https://x/a", depth=1)
+    log_event(logger, "page_fetched", url="https://x/a", status_code=200)
+
+    out = capsys.readouterr().out
+    assert "page_fetched" in out
+    assert "url_discovered" not in out
+
+    file_events = {json.loads(line)["event_type"] for line in log_path.read_text().splitlines()}
+    assert {"url_discovered", "page_fetched"} <= file_events
+
+
 def test_log_file_created(tmp_path):
     log_path = tmp_path / "crawl.jsonl"
     setup_logger(log_path, name="test_create")

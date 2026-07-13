@@ -27,6 +27,16 @@ class JSONLFormatter(logging.Formatter):
         return json.dumps(entry, default=str)
 
 
+class _ConsoleVolumeFilter(logging.Filter):
+    """Keeps high-frequency per-link events out of the console (still logged to
+    the JSONL file). See D3."""
+
+    NOISY = {"url_discovered", "url_skipped", "links_extracted"}
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        return getattr(record, "event_type", None) not in self.NOISY
+
+
 def setup_logger(log_path: Path, name: str = "crawl_engine") -> logging.Logger:
     """
     Create and configure the crawl logger.
@@ -48,10 +58,14 @@ def setup_logger(log_path: Path, name: str = "crawl_engine") -> logging.Logger:
     file_handler.setFormatter(JSONLFormatter())
     logger.addHandler(file_handler)
 
-    # Human-readable console handler
+    # Human-readable console handler. High-frequency per-link events are kept in
+    # the JSONL file but filtered off stdout so a real crawl (hundreds of links
+    # per page) does not flood the terminal (D3). Progress-level events
+    # (fetched/saved/failed/started/finished/...) still print.
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
+    console_handler.addFilter(_ConsoleVolumeFilter())
     logger.addHandler(console_handler)
 
     return logger
