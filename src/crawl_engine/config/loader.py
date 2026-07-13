@@ -118,6 +118,10 @@ class CrawlConfig(BaseModel):
     # How many pages to process between checkpoint saves (CE-036).
     checkpoint_interval: int = 50
 
+    # Politeness delay in seconds between requests (D7). 0.0 = no delay.
+    # (Full robots.txt handling is a separate, larger scope item.)
+    crawl_delay: float = 0.0
+
     # Logging
     log_path: Path = Path("output/crawl.jsonl")
 
@@ -143,6 +147,13 @@ class CrawlConfig(BaseModel):
     def positive_timeout(cls, v: int) -> int:
         if v < 1:
             raise ValueError("request_timeout must be >= 1")
+        return v
+
+    @field_validator("crawl_delay")
+    @classmethod
+    def non_negative_delay(cls, v: float) -> float:
+        if v < 0:
+            raise ValueError("crawl_delay must be >= 0")
         return v
 
     @model_validator(mode="after")

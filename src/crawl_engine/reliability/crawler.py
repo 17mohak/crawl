@@ -17,6 +17,7 @@ resumed (CE-036).
 from __future__ import annotations
 
 import logging
+import time
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from typing import Callable
@@ -58,10 +59,12 @@ class Crawler:
         logger: logging.Logger,
         fetcher: HttpFetcher | None = None,
         clock: Callable[[], datetime] | None = None,
+        sleep: Callable[[float], None] = time.sleep,
     ) -> None:
         self.config = config
         self.logger = logger
         self.fetcher = fetcher or HttpFetcher(config)
+        self._sleep = sleep  # injectable for testing the politeness delay (D7)
         self.queue = CrawlQueue.from_config(config)
         self.seen = SeenRegistry()
         self.stats = CrawlStats()
@@ -171,6 +174,8 @@ class Crawler:
         the loop continues with the next URL.
         """
         try:
+            if self.config.crawl_delay:  # D7: politeness rate-limit between requests
+                self._sleep(self.config.crawl_delay)
             result = self.fetcher.fetch(item.url, logger=self.logger)
             if not result.ok:
                 # fetcher already logged page_failed with the reason

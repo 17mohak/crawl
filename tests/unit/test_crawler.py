@@ -255,6 +255,25 @@ def test_interrupt_checkpoints_and_reraises(tmp_path):
     assert any(e["event_type"] == "crawl_interrupted" for e in events)
 
 
+def test_crawl_delay_sleeps_between_requests(tmp_path):
+    # D7: with crawl_delay set, the injected sleep is called once per fetch.
+    pages = {f"{BASE}/members": page("Members", "/members/a"), f"{BASE}/members/a": page("A")}
+    cfg = make_config(tmp_path, crawl_delay=0.25)
+    sleeps = []
+    Crawler(cfg, setup_logger(cfg.log_path, name="d7"), fetcher=FakeFetcher(pages),
+            sleep=sleeps.append).run()
+    assert sleeps == [0.25, 0.25]  # one delay per page fetched
+
+
+def test_no_crawl_delay_means_no_sleep(tmp_path):
+    pages = {f"{BASE}/members": page("Members")}
+    cfg = make_config(tmp_path)  # crawl_delay defaults to 0.0
+    sleeps = []
+    Crawler(cfg, setup_logger(cfg.log_path, name="d7b"), fetcher=FakeFetcher(pages),
+            sleep=sleeps.append).run()
+    assert sleeps == []
+
+
 def test_resume_tracks_session_start_baseline(tmp_path):
     # D5: after resume, session_start holds the restored totals so callers can
     # report this-session work distinctly from cumulative.
