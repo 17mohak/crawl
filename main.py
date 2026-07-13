@@ -4,10 +4,18 @@ CE-001: Project builds successfully and runs locally.
 """
 import argparse
 import sys
+from pathlib import Path
 
-from crawl_engine.config.loader import load_config
-from crawl_engine.logging.logger import setup_logger
-from crawl_engine.reliability.crawler import Crawler
+# Bootstrap: make the src/ layout importable even without `pip install -e .`
+# (dependencies still need to be installed). This lets `python main.py` work
+# straight from a clone.
+_SRC = Path(__file__).resolve().parent / "src"
+if _SRC.is_dir() and str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
+
+from crawl_engine.config.loader import load_config  # noqa: E402
+from crawl_engine.logging.logger import setup_logger  # noqa: E402
+from crawl_engine.reliability.crawler import Crawler  # noqa: E402
 
 
 def main() -> int:
