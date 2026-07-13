@@ -20,6 +20,10 @@ from crawl_engine.config.loader import CrawlConfig
 from crawl_engine.logging.logger import setup_logger
 from crawl_engine.reliability.crawler import Crawler
 
+# D8: these tests bind a real localhost socket; mark them so constrained
+# environments can deselect them with `pytest -m "not live"`.
+pytestmark = pytest.mark.live
+
 
 def _write_site(root):
     (root / "members" / "service-retirement").mkdir(parents=True)
