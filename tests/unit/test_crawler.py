@@ -255,6 +255,21 @@ def test_interrupt_checkpoints_and_reraises(tmp_path):
     assert any(e["event_type"] == "crawl_interrupted" for e in events)
 
 
+def test_resume_tracks_session_start_baseline(tmp_path):
+    # D5: after resume, session_start holds the restored totals so callers can
+    # report this-session work distinctly from cumulative.
+    pages = {f"{BASE}/members": page("Members")}
+    cfg = make_config(tmp_path)
+    Crawler(cfg, setup_logger(cfg.log_path, name="d5_1"), fetcher=FakeFetcher(pages)).run()
+
+    crawler2 = Crawler(cfg, setup_logger(tmp_path / "r.jsonl", name="d5_2"),
+                       fetcher=FakeFetcher(pages))
+    stats2 = crawler2.run(resume=True)
+    assert crawler2.session_start.pages_crawled == 1        # restored baseline
+    assert stats2.pages_crawled == 1                         # cumulative total
+    assert stats2.pages_crawled - crawler2.session_start.pages_crawled == 0  # 0 this session
+
+
 def test_checkpoint_interval_triggers_midcrawl(tmp_path):
     pages = {
         f"{BASE}/members": page("Members", "/members/a", "/members/b"),

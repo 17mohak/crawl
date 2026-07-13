@@ -65,6 +65,9 @@ class Crawler:
         self.queue = CrawlQueue.from_config(config)
         self.seen = SeenRegistry()
         self.stats = CrawlStats()
+        # Totals as they stood at the start of this run (non-zero after a resume).
+        # Lets callers report work done *this session* vs. cumulative (D5).
+        self.session_start = CrawlStats()
         # Injectable clock for the crawled_at timestamp. A fixed clock makes a
         # whole crawl byte-for-byte reproducible (determinism validation, CE-041).
         self._clock = clock or (lambda: datetime.now(timezone.utc))
@@ -93,6 +96,10 @@ class Crawler:
             max_pages=self.config.max_pages,
             resume=resume,
         )
+
+        # Snapshot totals at the start of this run (D5): after a resume these are
+        # non-zero, so callers can distinguish this session's work from totals.
+        self.session_start = CrawlStats(**asdict(self.stats))
 
         # D10: write an initial checkpoint immediately so an interruption before
         # the first `checkpoint_interval` boundary is still resumable.

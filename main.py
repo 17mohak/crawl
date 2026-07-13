@@ -56,8 +56,9 @@ def main() -> int:
     print()
     print("Starting crawl...")
 
+    crawler = Crawler(config, logger)
     try:
-        stats = Crawler(config, logger).run(resume=args.resume)
+        stats = crawler.run(resume=args.resume)
     except KeyboardInterrupt:
         print(
             "\nInterrupted. Progress was checkpointed — resume with --resume.",
@@ -67,6 +68,11 @@ def main() -> int:
 
     print()
     print("Crawl finished.")
+    if args.resume:
+        already = crawler.session_start.pages_crawled
+        this_session = stats.pages_crawled - already
+        print(f"  (resumed: {already} crawled before this session, "
+              f"{this_session} this session; totals below are cumulative)")
     print(f"  Pages crawled      : {stats.pages_crawled}")
     print(f"  Pages failed       : {stats.pages_failed}")
     print(f"  Pages skipped      : {stats.pages_skipped}")
